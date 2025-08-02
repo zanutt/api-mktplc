@@ -19,7 +19,7 @@ func NewProductHandler(db *gorm.DB) *ProductHandler {
 func (h *ProductHandler) Create(c *gin.Context) {
 	var input Product
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
 		return
 	}
 
@@ -29,10 +29,13 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// Salva no banco
 	if err := h.DB.Create(&product).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save: " + err.Error()})
 		return
 	}
+
+	// Retorna o produto salvo (com ID e campos atualizados)
 	c.JSON(http.StatusCreated, product)
 }
 
@@ -40,12 +43,26 @@ func (h *ProductHandler) List(c *gin.Context) {
 	name := c.Query("name")
 	category := c.Query("category")
 
-	products, err := ListProducts(h.DB, name, category)
+	// Default
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	products, totalCount, err := ListProducts(h.DB, name, category, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list products"})
 		return
 	}
-	c.JSON(http.StatusOK, products)
+
+	totalPages := (int(totalCount) + limit - 1) / limit
+	c.JSON(http.StatusOK, gin.H{
+		"data": products,
+		"meta": gin.H{
+			"page":          page,
+			"limit":         limit,
+			"totalProducts": totalCount,
+			"totalPages":    totalPages,
+		},
+	})
 }
 
 func (h *ProductHandler) Update(c *gin.Context) {

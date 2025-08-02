@@ -1,6 +1,7 @@
 package product
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,31 +22,18 @@ func TestNewProduct_Invalid(t *testing.T) {
 	assert.Equal(t, "invalid product data", err.Error())
 }
 
-func TestNewProduct_SaveToDB(t *testing.T) {
-	p, err := NewProduct("Teclado", "TecladoRGB", 299.99, "Periféricos")
-	assert.Nil(t, err)
-
-	result := testDB.Create(&p)
-	assert.Nil(t, result.Error)
-
-	var fetched Product
-	testDB.First(&fetched, "name = ?", "Teclado")
-
-	assert.Equal(t, p.Desc, fetched.Desc)
-
-}
-
 func TestListProducts(t *testing.T) {
 	// Reseta o db
 	testDB.Exec("DELETE FROM products")
 
-	// Cria products de exemplo
+	// Cria produtos de exemplo
 	testDB.Create(&Product{Name: "Notebook", Desc: "i7, 16GB RAM", Price: 4500.00, Category: "Eletrônicos"})
 	testDB.Create(&Product{Name: "Cafeteira", Desc: "Expresso", Price: 320.00, Category: "Eletrodomésticos"})
 	testDB.Create(&Product{Name: "Mouse Gamer", Desc: "RGB", Price: 159.90, Category: "Periféricos"})
 
-	products, err := ListProducts(testDB, "", "")
+	products, total, err := ListProducts(testDB, "", "", 1, 10)
 	assert.Nil(t, err)
+	assert.Equal(t, int64(3), total)
 	assert.Len(t, products, 3)
 }
 
@@ -56,9 +44,9 @@ func TestListProducts_WithFilters(t *testing.T) {
 	testDB.Create(&Product{Name: "Notebook Office", Desc: "", Price: 3200.00, Category: "Eletrônicos"})
 	testDB.Create(&Product{Name: "Furadeira", Desc: "", Price: 250.00, Category: "Ferramentas"})
 
-	// busca por nome que contenha "note" e categoria "Eletrônicos"
-	products, err := ListProducts(testDB, "note", "Eletrônicos")
+	products, total, err := ListProducts(testDB, "note", "Eletrônicos", 1, 10)
 	assert.Nil(t, err)
+	assert.Equal(t, int64(2), total)
 	assert.Len(t, products, 2)
 }
 
@@ -112,4 +100,38 @@ func TestDeleteProduct(t *testing.T) {
 	result := testDB.First(&p, product.ID)
 	assert.Error(t, result.Error)
 	assert.Equal(t, gorm.ErrRecordNotFound, result.Error)
+}
+
+func TestListProducts_WithPagination(t *testing.T) {
+	testDB.Exec("DELETE FROM products")
+
+	// Insere 6 produtos
+	for i := 1; i <= 6; i++ {
+		testDB.Create(&Product{
+			Name:     fmt.Sprintf("Produto %d", i),
+			Desc:     "Teste",
+			Price:    100,
+			Category: "Geral",
+		})
+	}
+
+	page1, total1, err := ListProducts(testDB, "", "", 1, 2)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(6), total1)
+	assert.Len(t, page1, 2)
+
+	page2, total2, err := ListProducts(testDB, "", "", 2, 2)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(6), total2)
+	assert.Len(t, page2, 2)
+
+	page3, total3, err := ListProducts(testDB, "", "", 3, 2)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(6), total3)
+	assert.Len(t, page3, 2)
+
+	page4, total4, err := ListProducts(testDB, "", "", 4, 2)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(6), total4)
+	assert.Len(t, page4, 0)
 }

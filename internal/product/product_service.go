@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func ListProducts(db *gorm.DB, nameFilter, categoryFilter string) ([]Product, error) {
+func ListProducts(db *gorm.DB, nameFilter, categoryFilter string, page, limit int) ([]Product, int64, error) {
 	var products []Product
 	query := db.Model(&Product{})
 
@@ -19,11 +19,17 @@ func ListProducts(db *gorm.DB, nameFilter, categoryFilter string) ([]Product, er
 		query = query.Where("LOWER(category) = ?", strings.ToLower(categoryFilter))
 	}
 
+	var totalCount int64
+	query.Count(&totalCount)
+
+	offset := (page - 1) * limit
+	query = query.Offset(offset).Limit(limit)
+
 	if err := query.Find(&products).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return products, nil
+	return products, totalCount, nil
 }
 
 func UpdateProduct(db *gorm.DB, updated Product) (Product, error) {

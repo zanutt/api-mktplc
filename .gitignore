@@ -1,0 +1,7 @@
+/.env.test
+/go.mod
+/go.sum
+/infra
+/internal
+/main.go
+/tests

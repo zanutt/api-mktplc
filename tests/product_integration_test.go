@@ -13,12 +13,13 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/zanutt/api-mktplc/internal/product"
+	"github.com/zanutt/api-mktplc/internal/router"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 var testDB *gorm.DB
-var router *gin.Engine
+var testRouter *gin.Engine
 
 func TestMain(m *testing.M) {
 	_ = godotenv.Load("../.env.test")
@@ -41,7 +42,7 @@ func TestMain(m *testing.M) {
 	_ = db.AutoMigrate(&product.Product{})
 
 	testDB = db
-	router = product.SetupRouter(db)
+	testRouter = router.SetupRouter(db)
 
 	os.Exit(m.Run())
 }
@@ -62,7 +63,7 @@ func TestCreateAndListProducts(t *testing.T) {
 	req := httptest.NewRequest("POST", "/products", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	testRouter.ServeHTTP(w, req)
 
 	fmt.Println("POST /products response:", w.Body.String())
 
@@ -71,7 +72,7 @@ func TestCreateAndListProducts(t *testing.T) {
 	// envia um GET
 	req = httptest.NewRequest("GET", "/products", nil)
 	w = httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	testRouter.ServeHTTP(w, req)
 
 	fmt.Println("GET /products response:", w.Body.String())
 

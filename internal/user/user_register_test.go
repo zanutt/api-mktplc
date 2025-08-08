@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"testing" // você esqueceu de importar "testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -16,7 +17,7 @@ import (
 )
 
 func setupTestDB() *gorm.DB {
-	_ = godotenv.Load("../../.env.test") // ajuste o path se necessário
+	_ = godotenv.Load("../../.env.test") // ajuste o caminho conforme necessário
 
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
@@ -32,22 +33,25 @@ func setupTestDB() *gorm.DB {
 		panic("failed to connect to test database: " + err.Error())
 	}
 
-	_ = db.Migrator().DropTable(&User{}) // limpa
-	_ = db.AutoMigrate(&User{})          // recria
+	// Limpa e migra a tabela User
+	_ = db.Migrator().DropTable(&User{})
+	_ = db.AutoMigrate(&User{})
 
 	return db
 }
 
-func TestRegisterHandler_Sucess(t *testing T){
+func TestRegisterHandler_Success(t *testing.T) {
 	db := setupTestDB()
+
+	gin.SetMode(gin.TestMode)
 	router := gin.Default()
 	router.POST("/register", RegisterHandler(db))
 
 	payload := map[string]interface{}{
-		"name": "João",
-		"email": "joao@example.com",
+		"username": "joaozinho", // Adicione o campo username se for obrigatório
+		"email":    "joao@example.com",
 		"password": "senha123",
-		"type": "user",
+		"type":     "user",
 	}
 
 	body, _ := json.Marshal(payload)
@@ -59,5 +63,5 @@ func TestRegisterHandler_Sucess(t *testing T){
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
-	assert.Contains(t, w.Body.String(), "João")
+	assert.Contains(t, w.Body.String(), "token")
 }

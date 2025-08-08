@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/zanutt/api-mktplc/internal/database"
 	"github.com/zanutt/api-mktplc/internal/router"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -30,6 +31,8 @@ func main() {
 	if err != nil {
 		log.Fatal("failed to connect to database:", err)
 	}
+
+	database.RunMigrations(db)
 
 	r := router.SetupRouter(db)
 	r.Run() // inicia servidor

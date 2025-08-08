@@ -17,7 +17,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 
 	// Rotas protegidas
 	productGroup := r.Group("/products")
-	productGroup.GET("", middleware.AuthMiddleware("user"), product.NewProductHandler(db).List) // user ou admin pode listar
+	productGroup.GET("", product.NewProductHandler(db).List)
 
 	// Admin-only
 	adminGroup := productGroup.Group("")

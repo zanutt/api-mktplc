@@ -8,11 +8,11 @@ import (
 
 var jwtKey = []byte("test_key")
 
-func GenerateJWT(username, userType string) (string, error) {
+func GenerateJWT(userID uint, userType string) (string, error) {
 	claims := jwt.MapClaims{
-		"username": username,
-		"type":     userType,
-		"exp":      time.Now().Add(24 * time.Hour).Unix(),
+		"user_id": userID,
+		"type":    userType,
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

@@ -15,6 +15,10 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	r.POST("/register", user.RegisterHandler(db))
 	r.POST("/login", user.LoginHandler(db))
 
+	auth := r.Group("/")
+	auth.Use(middleware.AuthMiddleware())
+	auth.GET("/me", user.MeHandler(db))
+
 	// Rotas protegidas
 	productGroup := r.Group("/products")
 	productGroup.GET("", product.NewProductHandler(db).List)

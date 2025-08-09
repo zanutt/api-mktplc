@@ -113,3 +113,25 @@ func LoginHandler(db *gorm.DB) gin.HandlerFunc {
 
 	}
 }
+
+func MeHandler(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userID := c.MustGet("userID").(uint)
+
+		var user User
+		if err := db.First(&user, userID).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				c.JSON(http.StatusNotFound, gin.H{"error": "Usuário não encontrado"})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar usuário"})
+			}
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"id":    user.ID,
+			"email": user.Email,
+			"type":  user.Type,
+		})
+	}
+}

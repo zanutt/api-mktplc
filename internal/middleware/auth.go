@@ -36,11 +36,19 @@ func AuthMiddleware(allowedTypes ...string) gin.HandlerFunc {
 
 		claims := token.Claims.(jwt.MapClaims)
 		userType := claims["type"].(string)
+		userID := uint(claims["user_id"].(float64))
+
+		c.Set("userType", userType)
+		c.Set("userID", userID)
+
+		if len(allowedTypes) == 0 {
+			c.Next()
+			return
+		}
 
 		// se o tipo nao for permitido
 		for _, t := range allowedTypes {
 			if t == userType {
-				c.Set("userType", userType)
 				c.Next()
 				return
 			}
